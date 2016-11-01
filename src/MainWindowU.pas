@@ -24,11 +24,15 @@ type
     FilePath: string;
     Document: IXMLDocument;
     ListView: TfpgListView;
+    ListViewCountColumn: TfpgLVColumn;
+    ListViewMainColumn: TfpgLVColumn;
     procedure AfterCreate; override;
     procedure ReceiveFileOpenCommand(aSender: TObject);
     procedure LoadFile(const aFilePath: string);
     procedure PrepareMenu;
     procedure DisplayElement(aNode: PXMLNode);
+    procedure ShowSomething;
+    procedure ActivateItem(aListView: TfpgListView; aItem: TfpgLVItem);
     destructor Destroy; override;
   end;
 
@@ -40,11 +44,24 @@ procedure TMainWindow.AfterCreate;
 begin
   inherited AfterCreate;
   WindowTitle := 'Hinst.FXML';
-  Width := 300;
+  Width := 600;
   Height := 300;
   PrepareMenu;
   ListView := TfpgListview.Create(self);
   ListView.Align := alClient;
+  ListView.OnItemActivate := @ActivateItem;
+  ListViewCountColumn := TfpgLVColumn.Create(ListView.Columns);
+  ListViewCountColumn.ColumnIndex := 0;
+  ListViewCountColumn.Caption := 'Count';
+  ListViewCountColumn.AutoSize := True;
+  ListViewCountColumn.Width := 32;
+  ListView.Columns.Add(ListViewCountColumn);
+  ListViewMainColumn := TfpgLVColumn.Create(ListView.Columns);
+  ListViewMainColumn.ColumnIndex := 1;
+  ListViewMainColumn.AutoExpand := true;
+  ListViewMainColumn.Caption := 'Node name';
+  ListView.Columns.Add(ListViewMainColumn);
+  ShowSomething;
 end;
 
 procedure TMainWindow.ReceiveFileOpenCommand(aSender: TObject);
@@ -81,15 +98,32 @@ procedure TMainWindow.DisplayElement(aNode: PXMLNode);
 var
   i: Integer;
   item: TfpgLVItem;
+  subNode: PXMLNode;
 begin
   ListView.Items.Clear;
   WriteLog('DisplayElement: ' + IntToStr(aNode^.ChildCount));
   for i := 0 to aNode^.ChildCount - 1 do
   begin
-    item := TfpgLVItem.Create(ListView.Items);
-    item.Caption := aNode^.ChildNodes[i]^.Text;
-    ListView.Items.Add(item);
+    subNode := aNode^.ChildNodes[i];
+    item := ListView.AddItem;
+    item.Caption := IntToStr(subNode^.ChildCount);
+    item.SubItems.Add(subNode^.NodeName);
+    item.UserData := subNode;
   end;
+  ListViewCountColumn.AutoSize := True;
+end;
+
+procedure TMainWindow.ShowSomething;
+var
+  item: TfpgLVItem;
+begin
+  item := ListView.AddItem;
+  item.SubItems.Add('XML viewer');
+end;
+
+procedure TMainWindow.ActivateItem(aListView: TfpgListView; aItem: TfpgLVItem);
+begin
+  WriteLog('?');
 end;
 
 destructor TMainWindow.Destroy;
