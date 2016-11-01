@@ -11,6 +11,7 @@ uses
   fpg_dialogs,
   fpg_listview,
   OXmlPDOM,
+  OXmlUtils,
   LogU;
 
 type
@@ -52,9 +53,9 @@ begin
   ListView.OnItemActivate := @ActivateItem;
   ListViewCountColumn := TfpgLVColumn.Create(ListView.Columns);
   ListViewCountColumn.ColumnIndex := 0;
-  ListViewCountColumn.Caption := 'Count';
+  ListViewCountColumn.Caption := '#';
   ListViewCountColumn.Resizable := True;
-  ListViewCountColumn.Width := 40;
+  ListViewCountColumn.Width := 32;
   ListView.Columns.Add(ListViewCountColumn);
   ListViewMainColumn := TfpgLVColumn.Create(ListView.Columns);
   ListViewMainColumn.ColumnIndex := 1;
@@ -99,18 +100,24 @@ var
   i: Integer;
   item: TfpgLVItem;
   subNode: PXMLNode;
+  text: string;
 begin
+  ListView.BeginUpdate;
   ListView.Items.Clear;
   WriteLog('DisplayElement: ' + IntToStr(aNode^.ChildCount));
   for i := 0 to aNode^.ChildCount - 1 do
   begin
     subNode := aNode^.ChildNodes[i];
     item := ListView.AddItem;
-    item.Caption := IntToStr(subNode^.ChildCount);
-    item.SubItems.Add(subNode^.NodeName);
+    item.Caption := IntToStr(i);
+    text := subNode^.NodeName;
+    if subNode^.NodeType = ntElement then
+      text := text + ' element [' + IntToStr(subNode^.ChildCount) + ']';
+    item.SubItems.Add(text);
     item.UserData := subNode;
   end;
   ListViewCountColumn.AutoSize := True;
+  ListView.EndUpdate;
 end;
 
 procedure TMainWindow.ShowSomething;
@@ -123,7 +130,8 @@ end;
 
 procedure TMainWindow.ActivateItem(aListView: TfpgListView; aItem: TfpgLVItem);
 begin
-  WriteLog('?');
+  if aItem.UserData <> nil then
+    DisplayElement(PXMLNode(aItem.UserData));
 end;
 
 destructor TMainWindow.Destroy;
