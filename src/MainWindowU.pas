@@ -53,8 +53,8 @@ begin
   ListViewCountColumn := TfpgLVColumn.Create(ListView.Columns);
   ListViewCountColumn.ColumnIndex := 0;
   ListViewCountColumn.Caption := 'Count';
-  ListViewCountColumn.AutoSize := True;
-  ListViewCountColumn.Width := 32;
+  ListViewCountColumn.Resizable := True;
+  ListViewCountColumn.Width := 40;
   ListView.Columns.Add(ListViewCountColumn);
   ListViewMainColumn := TfpgLVColumn.Create(ListView.Columns);
   ListViewMainColumn.ColumnIndex := 1;
