@@ -10,6 +10,7 @@ uses
   fpg_base,
   fpg_dialogs,
   fpg_listview,
+  fpg_panel,
   OXmlPDOM,
   OXmlUtils,
   LogU;
@@ -27,7 +28,9 @@ type
     ListView: TfpgListView;
     ListViewCountColumn: TfpgLVColumn;
     ListViewMainColumn: TfpgLVColumn;
+    TopPanel: TfpgPanel;
     procedure AfterCreate; override;
+    procedure PrepareListView;
     procedure ReceiveFileOpenCommand(aSender: TObject);
     procedure LoadFile(const aFilePath: string);
     procedure PrepareMenu;
@@ -48,6 +51,17 @@ begin
   Width := 600;
   Height := 300;
   PrepareMenu;
+  TopPanel := TfpgPanel.Create(self);
+  TopPanel.Height := 20;
+  TopPanel.Align := alTop;
+  TopPanel.Style := bsFlat;
+  TopPanel.Text := '';
+  PrepareListView;
+  ShowSomething;
+end;
+
+procedure TMainWindow.PrepareListView;
+begin
   ListView := TfpgListview.Create(self);
   ListView.Align := alClient;
   ListView.OnItemActivate := @ActivateItem;
@@ -62,7 +76,6 @@ begin
   ListViewMainColumn.AutoExpand := true;
   ListViewMainColumn.Caption := 'Node name';
   ListView.Columns.Add(ListViewMainColumn);
-  ShowSomething;
 end;
 
 procedure TMainWindow.ReceiveFileOpenCommand(aSender: TObject);
@@ -110,7 +123,7 @@ begin
     subNode := aNode^.ChildNodes[i];
     item := ListView.AddItem;
     item.Caption := IntToStr(i);
-    text := subNode^.NodeName;
+    text := '''' + subNode^.NodeName + '''';
     if subNode^.NodeType = ntElement then
       text := text + ' element [' + IntToStr(subNode^.ChildCount) + ']';
     item.SubItems.Add(text);
