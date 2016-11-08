@@ -1,7 +1,7 @@
 program ViewerP;
 
 uses
-  fpg_main, MainWindowU, LogU;
+  fpg_main, MainWindowU, LogU, UtilU;
 
 var
   window: TMainWindow;
