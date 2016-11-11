@@ -31,13 +31,16 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="2">
+    <RequiredPackages Count="3">
       <Item1>
-        <PackageName Value="fpgui_toolkit"/>
+        <PackageName Value="LCLBase"/>
       </Item1>
       <Item2>
-        <PackageName Value="OXml_Lazarus"/>
+        <PackageName Value="fpgui_toolkit"/>
       </Item2>
+      <Item3>
+        <PackageName Value="OXml_Lazarus"/>
+      </Item3>
     </RequiredPackages>
     <Units Count="4">
       <Unit0>

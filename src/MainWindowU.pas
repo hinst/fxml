@@ -15,7 +15,8 @@ uses
   OXmlPDOM,
   OXmlUtils,
   LogU,
-  UtilU;
+  UtilU,
+  LCLProc;
 
 type
 
@@ -31,6 +32,7 @@ type
     ListViewCountColumn: TfpgLVColumn;
     ListViewInfoColumn: TfpgLVColumn;
     ListViewMainColumn: TfpgLVColumn;
+    ListViewValueColumn: TfpgLVColumn;
     TopPanel: TfpgPanel;
     procedure AfterCreate; override;
     procedure PrepareListView;
@@ -39,12 +41,13 @@ type
     procedure PrepareMenu;
     procedure DisplayElement(aNode: PXMLNode);
     procedure DisplaySubItems(aNode: PXMLNode);
+    procedure DisplaySubNodes(aNode: PXMLNode);
+    procedure DisplayAttributes(aNode: PXMLNode);
     procedure UpdateHeader(aNode: PXMLNode);
     procedure ShowSomething;
     procedure ActivateItem(aListView: TfpgListView; aItem: TfpgLVItem);
     procedure ReceiveHeaderNodeClick(aSender: TObject);
-    procedure PaintItem(aListView: TfpgListView; ACanvas: TfpgCanvas; Item: TfpgLVItem;
-      ItemIndex: Integer; Area: TfpgRect; var PaintPart: TfpgLVItemPaintPart);
+    procedure ReceiveException(Sender: TObject; E: Exception);
     destructor Destroy; override;
   end;
 
@@ -73,7 +76,6 @@ begin
   ListView := TfpgListview.Create(self);
   ListView.Align := alClient;
   ListView.OnItemActivate := @ActivateItem;
-  ListView.OnPaintItem := @PaintItem;
 
   ListViewCountColumn := TfpgLVColumn.Create(ListView.Columns);
   ListViewCountColumn.ColumnIndex := 0;
@@ -91,9 +93,15 @@ begin
 
   ListViewMainColumn := TfpgLVColumn.Create(ListView.Columns);
   ListViewMainColumn.ColumnIndex := 2;
-  ListViewMainColumn.AutoExpand := true;
+  ListViewMainColumn.Width := 300;
+  ListViewMainColumn.Resizable := True;
   ListViewMainColumn.Caption := 'Node name';
   ListView.Columns.Add(ListViewMainColumn);
+
+  ListViewValueColumn := TfpgLVColumn.Create(ListView.Columns);
+  ListViewValueColumn.ColumnIndex := 3;
+  ListViewValueColumn.AutoExpand := True;
+  ListView.Columns.Add(ListViewValueColumn);
 end;
 
 procedure TMainWindow.ReceiveFileOpenCommand(aSender: TObject);
@@ -133,6 +141,17 @@ begin
 end;
 
 procedure TMainWindow.DisplaySubItems(aNode: PXMLNode);
+begin
+  ListView.BeginUpdate;
+  ListView.Items.Clear;
+  WriteLog('DisplayElement: ' + IntToStr(aNode^.ChildCount));
+  DisplayAttributes(aNode);
+  DisplaySubNodes(aNode);
+  ListViewCountColumn.AutoSize := True;
+  ListView.EndUpdate;
+end;
+
+procedure TMainWindow.DisplaySubNodes(aNode: PXMLNode);
 var
   i: Integer;
   item: TfpgLVItem;
@@ -140,9 +159,6 @@ var
   text: string;
   typeText: string;
 begin
-  ListView.BeginUpdate;
-  ListView.Items.Clear;
-  WriteLog('DisplayElement: ' + IntToStr(aNode^.ChildCount));
   for i := 0 to aNode^.ChildCount - 1 do
   begin
     subNode := aNode^.ChildNodes[i];
@@ -153,10 +169,33 @@ begin
       typeText := 'elem [' + IntToStr(subNode^.ChildCount) + ']';
     item.SubItems.Add(typeText);
     item.SubItems.Add(text);
+    if GetCountOfChildElements(subNode) = 0 then
+      item.SubItems.Add(GetCompactText(subNode^.Text));
     item.UserData := subNode;
   end;
-  ListViewCountColumn.AutoSize := True;
-  ListView.EndUpdate;
+end;
+
+procedure TMainWindow.DisplayAttributes(aNode: PXMLNode);
+var
+  i: Integer;
+  item: TfpgLVItem;
+  subNode: PXMLNode;
+  text: string;
+  typeText: string;
+begin
+  for i := 0 to aNode^.AttributeCount - 1 do
+  begin
+    subNode := aNode^.AttributeNodes[i];
+    item := ListView.AddItem;
+    item.Caption := IntToStr(i);
+    text := '''' + subNode^.NodeName + '''';
+    if subNode^.NodeType = ntAttribute then
+      typeText := 'attr';
+    item.SubItems.Add(typeText);
+    item.SubItems.Add(text);
+    item.SubItems.Add(GetCompactText(subNode^.NodeValue));
+    item.UserData := subNode;
+  end;
 end;
 
 procedure TMainWindow.UpdateHeader(aNode: PXMLNode);
@@ -193,9 +232,13 @@ begin
 end;
 
 procedure TMainWindow.ActivateItem(aListView: TfpgListView; aItem: TfpgLVItem);
+var
+  node: PXMLNode;
 begin
-  if aItem.UserData <> nil then
-    DisplayElement(PXMLNode(aItem.UserData));
+  node := PXMLNode(aItem.UserData);
+  if node <> nil then
+    if (GetCountOfChildElements(node) > 0) or (GetCountOfAttributes(node) > 0) then
+      DisplayElement(node);
 end;
 
 procedure TMainWindow.ReceiveHeaderNodeClick(aSender: TObject);
@@ -207,10 +250,9 @@ begin
     DisplayElement(node);
 end;
 
-procedure TMainWindow.PaintItem(aListView: TfpgListView; ACanvas: TfpgCanvas;
-  Item: TfpgLVItem; ItemIndex: Integer; Area: TfpgRect;
-  var PaintPart: TfpgLVItemPaintPart);
+procedure TMainWindow.ReceiveException(Sender: TObject; E: Exception);
 begin
+  DumpExceptionBackTrace;
 end;
 
 destructor TMainWindow.Destroy;
